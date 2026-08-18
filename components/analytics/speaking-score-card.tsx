@@ -1,12 +1,12 @@
-import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useState } from 'react';
-import { StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Svg, { Line } from 'react-native-svg';
 
 import { DeltaLabel, ScoreValue } from '@/components/metrics';
-import { fonts } from '@/constants/fonts';
-import { metricColors } from '@/constants/metrics';
+import { GlassSurface, ThemedText } from '@/components/ui';
 import { SKILL_ORDER } from '@/constants/metrics';
+import { radius, spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { scoreBand } from '@/lib/score';
 import { dayKeyToMs, type DayScore } from '@/lib/stats';
 
@@ -14,7 +14,14 @@ const CHART_HEIGHT = 110;
 /** Floor so a very low score still renders as a visible bar, and the height a
  * day with no practice gets. */
 const MIN_BAR = 14;
-const BAR_GAP = 7;
+const BAR_GAP = spacing.sm;
+
+/** Radius on a chart bar. Small enough that a 14pt minimum bar still reads as a
+ * bar rather than a lozenge. */
+const BAR_RADIUS = radius.xs;
+
+/** Height of the avg label, used to sit it just clear of the dashed line. */
+const AVG_LABEL_HEIGHT = 14;
 
 const WEEKDAY_INITIALS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'] as const;
 
@@ -49,9 +56,7 @@ export type SpeakingScoreCardProps = {
  * same figure.
  */
 export function SpeakingScoreCard({ score, delta, days, chartNote }: SpeakingScoreCardProps) {
-  const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
-  const theme = metricColors[scheme];
-  const hasGlass = isLiquidGlassAvailable();
+  const { colors } = useTheme();
   // Measured rather than a percentage width: react-native-svg needs a concrete
   // width to stroke a dash pattern across the chart.
   const [chartWidth, setChartWidth] = useState(0);
@@ -61,11 +66,13 @@ export function SpeakingScoreCard({ score, delta, days, chartNote }: SpeakingSco
   // would clip out of the card — drop the label below the line instead.
   const labelBelow = avgTop != null && avgTop < 14;
 
-  const body = (
-    <>
+  return (
+    <GlassSurface radius="xl" style={styles.card}>
       <View style={styles.head}>
         <View style={styles.headLeft}>
-          <Text style={[styles.eyebrow, { color: theme.label }]}>SPEAKING SCORE</Text>
+          <ThemedText variant="eyebrow" tone="secondary">
+            SPEAKING SCORE
+          </ThemedText>
           <ScoreValue value={score} size={52} maxSize={19} />
         </View>
         <View style={styles.headRight}>
@@ -73,13 +80,15 @@ export function SpeakingScoreCard({ score, delta, days, chartNote }: SpeakingSco
             <View
               style={[
                 styles.deltaPill,
-                { backgroundColor: delta > 0 ? theme.positiveBg : 'transparent' },
+                { backgroundColor: delta > 0 ? colors.positiveBg : 'transparent' },
               ]}>
               <DeltaLabel delta={delta} suffix="this week" />
             </View>
           )}
           {score != null && (
-            <Text style={[styles.band, { color: theme.label }]}>{scoreBand(score)}</Text>
+            <ThemedText variant="footnote" weight="semibold" tone="secondary">
+              {scoreBand(score)}
+            </ThemedText>
           )}
         </View>
       </View>
@@ -101,13 +110,13 @@ export function SpeakingScoreCard({ score, delta, days, chartNote }: SpeakingSco
                 style={{
                   flex: 1,
                   height: measured ? barHeight(day.score!) : MIN_BAR,
-                  borderRadius: 5,
+                  borderRadius: BAR_RADIUS,
                   borderCurve: 'continuous',
                   backgroundColor: !measured
-                    ? theme.barEmpty
+                    ? colors.barEmpty
                     : isToday
-                      ? theme.ink
-                      : theme.bar,
+                      ? colors.foreground
+                      : colors.bar,
                   opacity: partial ? 0.45 : 1,
                 }}
               />
@@ -126,19 +135,21 @@ export function SpeakingScoreCard({ score, delta, days, chartNote }: SpeakingSco
                   y1={0.75}
                   x2={chartWidth}
                   y2={0.75}
-                  stroke={theme.ink}
+                  stroke={colors.foreground}
                   strokeOpacity={0.15}
                   strokeWidth={1.5}
                   strokeDasharray="4 4"
                 />
               </Svg>
-              <Text
+              <ThemedText
+                variant="micro"
+                tone="tertiary"
                 style={[
                   styles.avgLabel,
-                  { color: theme.unit, top: labelBelow ? avgTop + 3 : avgTop - 14 },
+                  { top: labelBelow ? avgTop + spacing.xs : avgTop - AVG_LABEL_HEIGHT },
                 ]}>
                 avg {Math.round(score!)}
-              </Text>
+              </ThemedText>
             </>
           )}
         </View>
@@ -148,24 +159,21 @@ export function SpeakingScoreCard({ score, delta, days, chartNote }: SpeakingSco
             const isToday = i === days.length - 1;
             const initial = WEEKDAY_INITIALS[new Date(dayKeyToMs(day.dayKey)).getDay()];
             return (
-              <Text
+              <ThemedText
                 key={day.dayKey}
-                style={[
-                  styles.dayLabel,
-                  {
-                    color: isToday ? theme.ink : theme.caption,
-                    fontFamily: isToday ? fonts.bold : fonts.medium,
-                  },
-                ]}>
+                variant="caption"
+                weight={isToday ? 'bold' : 'medium'}
+                tone={isToday ? 'primary' : 'tertiary'}
+                style={styles.dayLabel}>
                 {initial}
-              </Text>
+              </ThemedText>
             );
           })}
         </View>
 
         {(days.some((d) => d.score != null && d.skillCount < SKILL_ORDER.length) ||
           chartNote != null) && (
-          <Text style={[styles.footnote, { color: theme.caption }]}>
+          <ThemedText variant="caption" weight="regular" tone="tertiary" style={styles.footnote}>
             {[
               days.some((d) => d.score != null && d.skillCount < SKILL_ORDER.length)
                 ? 'Lighter bars were scored on fewer skills.'
@@ -174,35 +182,20 @@ export function SpeakingScoreCard({ score, delta, days, chartNote }: SpeakingSco
             ]
               .filter(Boolean)
               .join(' ')}
-          </Text>
+          </ThemedText>
         )}
       </View>
-    </>
-  );
-
-  return hasGlass ? (
-    <GlassView
-      glassEffectStyle="regular"
-      style={[styles.card, { backgroundColor: theme.glassTint }]}>
-      {body}
-    </GlassView>
-  ) : (
-    <View style={[styles.card, { backgroundColor: theme.solidFallback }]}>{body}</View>
+    </GlassSurface>
   );
 }
 
 const styles = StyleSheet.create({
   footnote: {
-    fontSize: 12,
-    fontFamily: fonts.regular,
-    marginTop: 10,
+    marginTop: spacing.md,
   },
   card: {
-    padding: 22,
-    borderRadius: 42,
-    borderCurve: 'continuous',
-    overflow: 'hidden',
-    gap: 18,
+    padding: spacing.xxl,
+    gap: spacing.xl,
   },
   head: {
     flexDirection: 'row',
@@ -210,29 +203,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   headLeft: {
-    gap: 6,
-  },
-  eyebrow: {
-    fontSize: 12,
-    fontFamily: fonts.bold,
-    letterSpacing: 0.96,
+    gap: spacing.sm,
   },
   headRight: {
     alignItems: 'flex-end',
-    gap: 7,
+    gap: spacing.sm,
   },
   deltaPill: {
-    paddingVertical: 5,
-    paddingHorizontal: 11,
-    borderRadius: 50,
-    borderCurve: 'continuous',
-  },
-  band: {
-    fontSize: 13,
-    fontFamily: fonts.semibold,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.full,
   },
   chart: {
-    gap: 9,
+    gap: spacing.sm,
   },
   bars: {
     flexDirection: 'row',
@@ -248,8 +231,6 @@ const styles = StyleSheet.create({
   avgLabel: {
     position: 'absolute',
     left: 0,
-    fontSize: 10,
-    fontFamily: fonts.semibold,
   },
   dayRow: {
     flexDirection: 'row',
@@ -259,7 +240,6 @@ const styles = StyleSheet.create({
   dayLabel: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 12,
     lineHeight: 16,
   },
 });
