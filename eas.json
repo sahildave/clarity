@@ -20,6 +20,19 @@
         "APP_VARIANT": "preview"
       }
     },
+    "simulator": {
+      "extends": "preview",
+      "environment": "development",
+      "ios": {
+        "simulator": true
+      },
+      "env": {
+        "APP_VARIANT": "preview",
+        "EXPO_PUBLIC_AUTOMATION": "1",
+        "EXPO_PUBLIC_MOCK_PRACTICE": "1",
+        "EXPO_PUBLIC_SEED_HOOKS": "1"
+      }
+    },
     "production": {
       "autoIncrement": true,
       "environment": "production",
@@ -31,7 +44,8 @@
   "submit": {
     "production": {
       "ios": {
-        "ascAppId": "6800457983"
+        "ascAppId": "6800457983",
+        "metadataPath": "./store.config.json"
       }
     }
   }

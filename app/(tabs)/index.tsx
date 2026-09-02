@@ -28,7 +28,10 @@ import { generateWordPracticePassage } from '@/services/practice-generation';
 import { speakWord } from '@/services/word-pronunciation';
 
 /** Takes `now` from the shared clock so it refreshes on foreground instead of
- * being frozen at whatever hour the screen first mounted. */
+ * being frozen at whatever hour the screen first mounted.
+ *
+ * The time of day is the whole greeting. The account's `displayName` is
+ * deliberately NOT in it: the name is for Settings, not for the header. */
 function greeting(now: number) {
   const hour = new Date(now).getHours();
   if (hour < 5) return 'Good Evening';
@@ -113,6 +116,7 @@ export default function HomeScreen() {
     <Animated.ScrollView
       onScroll={onScroll}
       scrollEventThrottle={16}
+      showsVerticalScrollIndicator={false}
       style={{ flex: 1 }}
       contentContainerStyle={{
         paddingTop: insets.top + spacing.xxl,
@@ -124,8 +128,13 @@ export default function HomeScreen() {
           animates transform-only (fade: false) — glass breaks under animated
           opacity — and gets its fade-in from the splash overlay instead. */}
       <View style={styles.header}>
-        <IntroReveal order={0}>
-          <ThemedText variant="largeTitle">{greeting(now)}</ThemedText>
+        {/* flexShrink: the header row also holds the actions, so the title
+            yields width to them and wraps onto a second line rather than
+            pushing them off screen or truncating to "Good Afternoo…". */}
+        <IntroReveal order={0} style={styles.greeting}>
+          <ThemedText variant="largeTitle" numberOfLines={2}>
+            {greeting(now)}
+          </ThemedText>
         </IntroReveal>
         <IntroReveal order={0} fade={false}>
           <HeaderActions streak={stats.streak} />
@@ -189,7 +198,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: spacing.md,
     marginBottom: spacing.xl,
+  },
+  greeting: {
+    flexShrink: 1,
   },
   // Breathing room between a section's title/description block and its card.
   sectionCard: {

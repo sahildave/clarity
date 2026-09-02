@@ -1,0 +1,70 @@
+name: Deploy to TestFlight
+
+# A push to main ships a build to TestFlight. The full native compile only
+# runs when the native layer changes. If a store build already exists for the
+# current fingerprint, repack replaces its JavaScript bundle and app metadata.
+
+on:
+  push:
+    branches: ['main']
+  # This also supports `eas workflow:run` before the GitHub repository is
+  # connected to the EAS project.
+  workflow_dispatch: {}
+
+concurrency:
+  cancel_in_progress: true
+  group: ${{ workflow.filename }}-${{ github.ref }}
+
+jobs:
+  fingerprint:
+    name: Fingerprint native layer
+    type: fingerprint
+    # These values must match the production build profile. APP_VARIANT affects
+    # the app identifier and scheme in app.config.ts, so it is a native input.
+    environment: production
+    env:
+      APP_VARIANT: production
+
+  get_ios_build:
+    name: Look for a matching iOS build
+    type: get-build
+    needs: [fingerprint]
+    params:
+      platform: ios
+      profile: production
+      distribution: store
+      fingerprint_hash: ${{ needs.fingerprint.outputs.ios_fingerprint_hash }}
+      # Reuse an identical build that is already running instead of starting a
+      # second native compile.
+      wait_for_in_progress: true
+
+  build_ios:
+    name: Build iOS (native changed)
+    type: build
+    needs: [get_ios_build]
+    if: ${{ !needs.get_ios_build.outputs.build_id }}
+    params:
+      platform: ios
+      profile: production
+      message: ${{ github.commit_message }}
+
+  repack_ios:
+    name: Repack iOS (JS only)
+    type: repack
+    needs: [get_ios_build]
+    if: ${{ needs.get_ios_build.outputs.build_id }}
+    params:
+      build_id: ${{ needs.get_ios_build.outputs.build_id }}
+      profile: production
+      message: ${{ github.commit_message }}
+
+  testflight:
+    name: Upload to TestFlight
+    type: testflight
+    # Exactly one producer is skipped. `after` waits for both without requiring
+    # both to succeed, unlike `needs`.
+    after: [build_ios, repack_ios]
+    params:
+      build_id: ${{ after.build_ios.outputs.build_id || after.repack_ios.outputs.build_id }}
+      profile: production
+      changelog: ${{ github.commit_message }}

@@ -37,6 +37,15 @@ export function freestylePassageItem(topic: FreestyleTopic): Passage {
 }
 
 /** Ties break toward the most actionable skill. */
+/** Cold-start subtitles when the pick comes from the user's stated priority. */
+const PRIORITY_REASONS: Record<SkillKey, string> = {
+  accuracy: 'You said you want clearer articulation. Start with the tricky sounds',
+  fluency: 'You said you want smoother delivery. These build steady flow',
+  pace: 'You said you want steadier pacing. These lock in a target speed',
+  fillers: 'You said you want fewer fillers. Practice off the cuff first',
+  intonation: 'You said you want more expression. These reads reward melody',
+};
+
 const TIE_PRIORITY: SkillKey[] = ['fillers', 'pace', 'accuracy', 'fluency', 'intonation'];
 
 const REASONS: Record<SkillKey, string> = {
@@ -69,29 +78,45 @@ function suggestedTopic(records: readonly SessionRecord[]): FreestyleTopic {
   return TOPICS[records.length % TOPICS.length];
 }
 
+/** Fixed starter set for a user with no history and no stated priority. */
+function starterSet(): RecommendationSet {
+  return {
+    items: [
+      PASSAGES.find((p) => p.id === 'epic-speech')!,
+      PASSAGES.find((p) => p.id === 'tongue-twisters')!,
+      DRILLS.find((d) => d.id === 'drill-minimal-pairs')!,
+      freestylePassageItem(TOPICS.find((t) => t.id === 'introduce-yourself')!),
+    ],
+    reason: null,
+    weakest: null,
+  };
+}
+
+/**
+ * Content picks for the Practice tab.
+ *
+ * `priority` is the skill the user said they want to work on during onboarding.
+ * It steers ONLY the cold start: once three sessions exist and a skill has enough
+ * samples to be known, the measured profile decides and the stated preference is
+ * ignored. The preference never fabricates a skill estimate.
+ */
 export function recommend(
   records: readonly SessionRecord[],
   profile: SkillProfile,
+  priority: SkillKey | null = null,
 ): RecommendationSet {
   const known = TIE_PRIORITY.filter((k) => profile[k].samples >= SKILL_KNOWN_SAMPLES);
+  const coldStart = records.length < 3 || known.length === 0;
 
-  if (records.length < 3 || known.length === 0) {
-    return {
-      items: [
-        PASSAGES.find((p) => p.id === 'epic-speech')!,
-        PASSAGES.find((p) => p.id === 'tongue-twisters')!,
-        DRILLS.find((d) => d.id === 'drill-minimal-pairs')!,
-        freestylePassageItem(TOPICS.find((t) => t.id === 'introduce-yourself')!),
-      ],
-      reason: null,
-      weakest: null,
-    };
-  }
+  if (coldStart && priority === null) return starterSet();
 
   // argmin over known skills; TIE_PRIORITY order makes ties actionable-first.
-  let weakest = known[0];
-  for (const key of known) {
-    if (profile[key].value < profile[weakest].value) weakest = key;
+  let weakest: SkillKey = priority ?? known[0];
+  if (!coldStart) {
+    weakest = known[0];
+    for (const key of known) {
+      if (profile[key].value < profile[weakest].value) weakest = key;
+    }
   }
 
   const last = lastPracticedAt(records);
@@ -122,5 +147,8 @@ export function recommend(
       ? [...freestyle, ...drills, ...[...PASSAGES].sort(byStaleness).slice(0, 2)]
       : [...drills, ...passages, ...freestyle];
 
-  return { items: items.slice(0, 5), reason: REASONS[weakest], weakest };
+  // A stated priority explains itself as a plan, not as a diagnosis of history
+  // that does not exist yet.
+  const reason = coldStart ? PRIORITY_REASONS[weakest] : REASONS[weakest];
+  return { items: items.slice(0, 5), reason, weakest };
 }

@@ -44,6 +44,59 @@ export const type = {
    * is the whole point of its card; the label beside it is the caption. */
   displayValue: { fontSize: 26, fontFamily: fonts.heavy, letterSpacing: -0.5 },
 
+  // --- Marketing site ---
+  // These mirror the desktop and mobile ramps in the Paper landing page.
+  marketingWordmark: {
+    fontSize: 20,
+    fontFamily: fonts.bold,
+    letterSpacing: -0.6,
+    lineHeight: 24,
+  },
+  marketingWordmarkMobile: {
+    fontSize: 18,
+    fontFamily: fonts.bold,
+    letterSpacing: -0.54,
+    lineHeight: 20,
+  },
+  marketingDisplay: {
+    fontSize: 84,
+    fontFamily: fonts.semibold,
+    letterSpacing: -2.94,
+    lineHeight: 84,
+  },
+  marketingDisplayMobile: {
+    fontSize: 48,
+    fontFamily: fonts.semibold,
+    letterSpacing: -1.68,
+    lineHeight: 48,
+  },
+  marketingSection: {
+    fontSize: 52,
+    fontFamily: fonts.semibold,
+    letterSpacing: -1.82,
+    lineHeight: 56,
+  },
+  marketingSectionMobile: {
+    fontSize: 36,
+    fontFamily: fonts.semibold,
+    letterSpacing: -1.26,
+    lineHeight: 40,
+  },
+  marketingFeature: { fontSize: 22, fontFamily: fonts.semibold, lineHeight: 28 },
+  marketingFeatureMobile: { fontSize: 20, fontFamily: fonts.semibold, lineHeight: 24 },
+  marketingBody: { fontSize: 18, fontFamily: fonts.regular, lineHeight: 28 },
+  marketingBodyMobile: { fontSize: 16, fontFamily: fonts.regular, lineHeight: 24 },
+  marketingHeroBodyMobile: { fontSize: 17, fontFamily: fonts.regular, lineHeight: 24 },
+  marketingEyebrow: { fontSize: 18, fontFamily: fonts.semibold, lineHeight: 24 },
+  marketingEyebrowMobile: { fontSize: 16, fontFamily: fonts.semibold, lineHeight: 24 },
+  marketingNav: { fontSize: 14, fontFamily: fonts.medium, lineHeight: 18 },
+  marketingNavStrong: { fontSize: 14, fontFamily: fonts.semibold, lineHeight: 18 },
+  marketingButton: { fontSize: 14, fontFamily: fonts.semibold, lineHeight: 20 },
+  marketingButtonMobile: { fontSize: 16, fontFamily: fonts.semibold, lineHeight: 20 },
+  marketingKickerMobile: { fontSize: 14, fontFamily: fonts.semibold, lineHeight: 20 },
+  marketingMeta: { fontSize: 12, fontFamily: fonts.medium, lineHeight: 20 },
+  marketingMetaMobile: { fontSize: 13, fontFamily: fonts.medium, lineHeight: 20 },
+
   // --- Prose: multi-line copy, so these carry leading ---
   bodyProse: { fontSize: 17, fontFamily: fonts.regular, lineHeight: 24 },
   subheadProse: { fontSize: 15, fontFamily: fonts.regular, lineHeight: 21 },

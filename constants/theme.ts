@@ -18,7 +18,9 @@
  */
 
 export { colors, type ColorSchemeName, type ThemeColors } from './colors';
-export { fontAssets, fonts } from './fonts';
+export { fontAssets } from './font-assets';
+export { fonts } from './fonts';
+export { marketing } from './marketing';
 export { motion, springs } from './motion';
 export { radius } from './radius';
 export { spacing, TAB_BAR_SCROLL_INSET } from './spacing';

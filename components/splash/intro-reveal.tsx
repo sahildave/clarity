@@ -26,16 +26,23 @@ const DURATION_MS = 450;
  * then fades/slides in at its stagger slot. Use directly on components that
  * can't tolerate a wrapper view (e.g. inside expo-router's TabList, whose
  * trigger parsing skips unknown wrappers); otherwise prefer `IntroReveal`.
- * Mounting after the intro already ran renders visible immediately.
+ * Mounting after the intro already ran renders visible immediately, unless
+ * `autoplay` is set: then the reveal replays on mount, which is what a screen
+ * reached by navigation (sign-in, each onboarding step) wants. A cold launch
+ * straight into such a screen still waits for the splash handoff, because
+ * `revealed` starts false either way.
  *
  * `fade: false` animates transform only. Required for anything containing a
  * GlassView — iOS glass effects break (render empty) under an ancestor whose
  * opacity is animated. Those items rely on the splash overlay's own fade-out
  * for their fade-in, and slide into place beneath it.
  */
-export function useIntroRevealStyle(order: number, dy = 14, fade = true) {
+export function useIntroRevealStyle(order: number, dy = 14, fade = true, autoplay = false) {
   const revealed = use(IntroContext);
-  const skipped = useRef(revealed).current;
+  // Unconditional: the ref captures the FIRST render's value either way, and a
+  // hook behind a ternary is one prop change away from a hook-order crash.
+  const revealedOnMount = useRef(revealed).current;
+  const skipped = autoplay ? false : revealedOnMount;
   const progress = useSharedValue(skipped ? 1 : 0);
 
   useEffect(() => {
@@ -65,6 +72,8 @@ export type IntroRevealProps = ViewProps & {
   dy?: number;
   /** Set false for children containing GlassViews (see useIntroRevealStyle). */
   fade?: boolean;
+  /** Replay the reveal on every mount, for screens reached after the splash. */
+  autoplay?: boolean;
 };
 
 /** Wrapper view that hides its children until the splash reveal begins, then
@@ -73,11 +82,12 @@ export function IntroReveal({
   order,
   dy = 14,
   fade = true,
+  autoplay = false,
   style,
   children,
   ...rest
 }: IntroRevealProps) {
-  const animatedStyle = useIntroRevealStyle(order, dy, fade);
+  const animatedStyle = useIntroRevealStyle(order, dy, fade, autoplay);
   return (
     <Animated.View {...rest} style={[style, animatedStyle]}>
       {children}

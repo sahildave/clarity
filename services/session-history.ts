@@ -15,10 +15,11 @@ import { File, Paths } from 'expo-file-system';
 import { createHistoryStore } from '@/lib/history-store';
 import { durable, kv } from '@/services/kv';
 import { summarizeWords } from '@/services/ai-coaching';
-import type { SessionEndedReason, SessionMode } from '@/types/history';
+import { practiceEnded, practiceStarted } from '@/services/observe-events';
+import type { InflightSession, SessionEndedReason, SessionMode } from '@/types/history';
 import type { SessionResult } from '@/types/session';
 
-export type { WriteResult, ImportSummary, StorageStats } from '@/lib/history-store';
+export type { WriteResult, ImportSummary, StorageStats, WordDelta } from '@/lib/history-store';
 
 /** The pre-MMKV store. Never deleted: it stays a free backup, and if MMKV is
  * ever cleared the migration guard clears with it and the import re-runs. */
@@ -44,14 +45,34 @@ export const subscribe = store.subscribe;
 export const getWordStats = store.getWordStats;
 export const removeRecord = store.removeRecord;
 export const clearHistory = store.clearAll;
+export const clearAccountHistory = store.clearAccountData;
 export const exportHistory = store.exportHistory;
 export const importHistory = store.importHistory;
 export const getQuarantine = store.getQuarantine;
 export const getStorageStats = store.getStats;
 export const getLastError = store.getLastError;
-export const beginSession = store.beginSession;
 export const checkpointSession = store.checkpointSession;
 export const endSession = store.endSession;
+/** Sync-layer seams: verdicts awaiting upload, and the fold for ones that
+ * arrived from another device. */
+export const getWordDeltas = store.getWordDeltas;
+export const removeWordDeltas = store.removeWordDeltas;
+export const applyWordVerdicts = store.applyWordVerdicts;
+
+/**
+ * Opens the crash checkpoint for a new attempt, and reports the start to EAS
+ * Observe on the way through.
+ *
+ * This is the one call every start passes: the passage, drill, and freestyle
+ * screens all open their checkpoint here on mount, and a restart mid-read
+ * re-opens it. Instrumenting the store's entry point rather than those four call
+ * sites is what keeps `practice.started` from drifting out of step with
+ * `practice.ended` the next time an entry point is added.
+ */
+export function beginSession(session: Omit<InflightSession, 'startedAt' | 'updatedAt'>) {
+  practiceStarted(session);
+  store.beginSession(session);
+}
 
 export type SessionMeta = {
   mode: SessionMode;
@@ -74,7 +95,7 @@ export type SessionMeta = {
  */
 export function recordSession(result: SessionResult, meta: SessionMeta) {
   const { wordCounts, challengingWords } = summarizeWords(result.words);
-  return store.recordSession({
+  const written = store.recordSession({
     mode: meta.mode,
     endedReason: meta.endedReason ?? 'stopped',
     passageId: meta.passageId,
@@ -98,6 +119,17 @@ export function recordSession(result: SessionResult, meta: SessionMeta) {
     challengingWords,
     words: result.words,
   });
+
+  // Paired with `practice.started` above. Reported here rather than from the two
+  // session screens because every terminal path — finished, stopped early, and
+  // abandoned by dismissing or restarting — funnels through this one call.
+  practiceEnded(result, {
+    mode: meta.mode,
+    endedReason: meta.endedReason ?? 'stopped',
+    persisted: written.ok,
+  });
+
+  return written;
 }
 
 if (__DEV__) {

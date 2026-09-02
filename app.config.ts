@@ -57,6 +57,17 @@ function getIosIcon() {
 export default ({ config }: ConfigContext): ExpoConfig => {
   const iosIcon = getIosIcon();
   const baseScheme = typeof config.scheme === 'string' ? config.scheme : 'clarity';
+  const easProjectId = (config.extra?.eas as { projectId?: unknown } | undefined)?.projectId;
+  const updatesUrl =
+    typeof easProjectId === 'string' ? `https://u.expo.dev/${easProjectId}` : config.updates?.url;
+  const marketingWeb = process.env.EXPO_MARKETING_WEB === '1';
+  const automationBuild = process.env.EXPO_PUBLIC_AUTOMATION === '1';
+  const plugins = (config.plugins ?? []).map((plugin) => {
+    const name = Array.isArray(plugin) ? plugin[0] : plugin;
+    return name === 'expo-router' && marketingWeb
+      ? (['expo-router', { root: 'web' }] as [string, { root: string }])
+      : plugin;
+  });
 
   return {
     ...config,
@@ -68,7 +79,29 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     updates: {
       ...config.updates,
-      url: 'https://u.expo.dev/654f9e52-e892-44e4-a4b8-9aa700fef15b',
+      // The simulator profile is a deterministic QA fixture. Letting it pull
+      // the shared preview channel could replace its development Clerk config
+      // and speech mocks with an unrelated preview bundle on the next launch.
+      enabled: automationBuild ? false : config.updates?.enabled,
+      // Keep the Updates scope tied to extra.eas.projectId. This project was
+      // renamed/relinked once; a copied URL silently pointed release builds at
+      // the retired project while EAS Build targeted the current one.
+      url: updatesUrl,
+    },
+    experiments: {
+      ...config.experiments,
+      typedRoutes: marketingWeb ? false : config.experiments?.typedRoutes,
+    },
+    extra: {
+      ...config.extra,
+      // Clerk's native Google hook reads these from `expoConfig.extra` first and
+      // `process.env` second, because EXPO_PUBLIC_ reads inside node_modules are
+      // not inlined in production bundles. Mirroring them here is what makes a
+      // release build find them. The URL scheme is read by the
+      // @clerk/expo-google-signin config plugin at prebuild.
+      EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID: process.env.EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID,
+      EXPO_PUBLIC_CLERK_GOOGLE_IOS_CLIENT_ID: process.env.EXPO_PUBLIC_CLERK_GOOGLE_IOS_CLIENT_ID,
+      EXPO_PUBLIC_CLERK_GOOGLE_IOS_URL_SCHEME: process.env.EXPO_PUBLIC_CLERK_GOOGLE_IOS_URL_SCHEME,
     },
     ios: {
       ...config.ios,
@@ -80,7 +113,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       package: getBundleId(),
     },
     plugins: [
-      ...(config.plugins ?? []),
+      ...plugins,
       ['expo-dev-client', { addGeneratedScheme: process.env.APP_VARIANT === 'development' }],
     ],
   };

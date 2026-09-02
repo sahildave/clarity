@@ -47,7 +47,17 @@ export default function SessionLayout() {
 
   return (
     <SessionContext.Provider value={value}>
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen
+          name="word-detail"
+          options={{
+            presentation: 'formSheet',
+            headerShown: false,
+            sheetAllowedDetents: 'fitToContents',
+            sheetGrabberVisible: true,
+          }}
+        />
+      </Stack>
     </SessionContext.Provider>
   );
 }

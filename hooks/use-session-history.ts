@@ -11,6 +11,7 @@ import {
   wordsToMaster,
 } from '@/lib/stats';
 import { getRecords, getWordStats, subscribe } from '@/services/session-history';
+import { useSettings } from '@/hooks/use-settings';
 import type { SessionRecord, SkillProfile, WordStat } from '@/types/history';
 
 import { useNow } from './use-now';
@@ -40,14 +41,15 @@ export type DerivedStats = {
 export function useDerivedStats(): DerivedStats {
   const records = useSessionRecords();
   const now = useNow();
+  const { goalMinutes } = useSettings();
   return useMemo(
     () => ({
       streak: streak(records, now),
-      todayProgress: todayProgress(records, now),
-      weeklyHistory: weeklyHistory(records, now),
+      todayProgress: todayProgress(records, now, goalMinutes),
+      weeklyHistory: weeklyHistory(records, now, goalMinutes),
       skillProfile: skillProfile(records),
     }),
-    [records, now],
+    [records, now, goalMinutes],
   );
 }
 
@@ -83,5 +85,9 @@ export function useWords(count = 5): {
 /** Weakest-skill content picks for the Practice tab's Recommended section. */
 export function useRecommendations(): RecommendationSet {
   const records = useSessionRecords();
-  return useMemo(() => recommend(records, skillProfile(records)), [records]);
+  const { prioritySkill } = useSettings();
+  return useMemo(
+    () => recommend(records, skillProfile(records), prioritySkill),
+    [records, prioritySkill],
+  );
 }

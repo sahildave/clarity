@@ -11,6 +11,12 @@ export const motion = {
   base: 250,
   /** Large surfaces: sheets, screen-level fades. */
   slow: 400,
+  /** Gap between semantic groups in a first-load entrance. */
+  stagger: 100,
+  /** Small rise used by entering content; large enough to read, not travel. */
+  enterOffset: 12,
+  /** Strong ease-out for anything entering or leaving the interface. */
+  easeOut: [0.23, 1, 0.32, 1] as const,
 } as const;
 
 /**

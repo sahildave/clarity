@@ -13,7 +13,11 @@ export type TextTone =
   | 'inverse'
   | 'accent'
   | 'positive'
-  | 'focus';
+  | 'focus'
+  | 'marketingPrimary'
+  | 'marketingSecondary'
+  | 'marketingInverse'
+  | 'marketingAccent';
 
 export type ThemedTextProps = TextProps & {
   /** A step in the type ramp. Defaults to `body`. */
@@ -50,6 +54,10 @@ export function ThemedText({
     accent: colors.accent,
     positive: colors.positive,
     focus: colors.focus,
+    marketingPrimary: colors.marketingInk,
+    marketingSecondary: colors.marketingMuted,
+    marketingInverse: colors.marketingOnInverse,
+    marketingAccent: colors.marketingAccent,
   };
 
   const face: TextStyle | undefined = weight ? { fontFamily: fonts[weight] } : undefined;

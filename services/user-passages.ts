@@ -15,6 +15,7 @@ import { File, Paths } from 'expo-file-system';
 import { KEY, META_KEY } from '@/lib/history-schema';
 import { tokenizePassage } from '@/lib/passage-text';
 import { kv } from '@/services/kv';
+import { notePassageDelete } from '@/services/sync-state';
 import type { CustomPassage } from '@/types/session';
 
 /** Base/blob gradient pairs assigned round-robin; alphas stay < 1 so the
@@ -179,6 +180,40 @@ export function addPassage(input: {
 
 export function removePassage(id: string) {
   kv.remove(passageKey(id));
+  // Recorded before anything async can run: once the row is gone, this note is
+  // the only thing left that can tell the server about the delete.
+  notePassageDelete(id);
   passages = hydrate().filter((p) => p.id !== id);
+  for (const listener of listeners) listener();
+}
+
+/**
+ * Apply what the server knows: passages authored on another device, and
+ * deletes made there. Never notes a pending delete, because these removals
+ * ARE the server's word. One notification for the whole batch.
+ */
+export function applyRemotePassages(add: readonly CustomPassage[], removeIds: readonly string[]) {
+  const current = hydrate();
+  const removed = new Set(removeIds);
+  let next = current.filter((p) => !removed.has(p.id));
+  for (const id of removeIds) kv.remove(passageKey(id));
+  const present = new Set(next.map((p) => p.id));
+  for (const passage of add) {
+    if (present.has(passage.id)) continue;
+    if (!write(passage)) continue;
+    next = [...next, passage];
+    present.add(passage.id);
+  }
+  if (next.length === current.length && removeIds.length === 0 && add.length === 0) return;
+  passages = next.sort((a, b) => a.createdAt - b.createdAt);
+  for (const listener of listeners) listener();
+}
+
+/** Sign-out wipe: every custom passage, not the migration guard. */
+export function clearCustomPassages() {
+  for (const key of kv.getAllKeys()) {
+    if (key.startsWith(KEY.passage)) kv.remove(key);
+  }
+  passages = [];
   for (const listener of listeners) listener();
 }

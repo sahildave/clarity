@@ -29,6 +29,8 @@ export const KEY = {
   word: 'w/',
   passage: 'p/',
   meta: 'meta/',
+  /** Per-record word verdicts awaiting upload; see `deltaKey`. */
+  delta: 'd/',
 } as const;
 
 export const META_KEY = {
@@ -63,6 +65,15 @@ export function parseRecordKey(key: string): { completedAt: number; seq: number 
   const seq = Number(s);
   if (!Number.isFinite(completedAt) || !Number.isFinite(seq)) return null;
   return { completedAt, seq };
+}
+
+/**
+ * `d/<recordId>`: the compact per-word verdicts of one session, kept only until
+ * the sync layer has pushed them. The record itself stays scalar-only; this
+ * sidecar is what lets word mastery rebuild on another device.
+ */
+export function deltaKey(recordId: string): string {
+  return `${KEY.delta}${recordId}`;
 }
 
 export function wordKey(word: string): string {

@@ -80,8 +80,20 @@ const light = {
   /** Only the single FOCUS pill on the weakest skill. */
   focus: '#A96400',
   focusBg: '#FDEFDC',
-  /** Form validation only. Never a metric — no metric may render red. */
+  /** Form validation and destructive account actions (sign out, delete). Never
+   * a metric — no metric may render red. */
   danger: '#FF3B30',
+
+  // --- Marketing site ---
+  // The Paper landing page is intentionally light-only. These tokens stay
+  // fixed across schemes so a browser preference cannot invert the brand page.
+  marketingCanvas: '#FFFFFF',
+  marketingInk: '#111114',
+  marketingMuted: '#77777E',
+  marketingLine: '#E6E6EB',
+  marketingInverse: '#1C1C21',
+  marketingOnInverse: '#FFFFFF',
+  marketingAccent: '#3478F6',
 
   // --- On artwork ---
   // Deliberately fixed in both schemes: a passage card is its own dark artwork
@@ -127,6 +139,14 @@ const dark: Record<keyof typeof light, string> = {
   focus: '#F0B458',
   focusBg: 'rgba(240,180,88,0.16)',
   danger: '#FF453A',
+
+  marketingCanvas: '#FFFFFF',
+  marketingInk: '#111114',
+  marketingMuted: '#77777E',
+  marketingLine: '#E6E6EB',
+  marketingInverse: '#1C1C21',
+  marketingOnInverse: '#FFFFFF',
+  marketingAccent: '#3478F6',
 
   onArtwork: '#FFFFFF',
   onArtworkMuted: 'rgba(255,255,255,0.75)',

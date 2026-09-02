@@ -8,6 +8,7 @@ import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SegmentedControl } from '@/components/segmented-control';
 import { PrimaryButton, ThemedText } from '@/components/ui';
 import { radius, spacing, type } from '@/constants/theme';
+import { PASSAGE_TEXT_MAX } from '@/convex/limits';
 import { useMarkInteractive } from '@/hooks/use-mark-interactive';
 import { useTheme } from '@/hooks/use-theme';
 import { tokenizePassage } from '@/lib/passage-text';
@@ -118,6 +119,10 @@ export default function PassageEditorScreen() {
             }}
             placeholder="Paste any text, speech, or transcript…"
             placeholderTextColor={colors.secondary}
+            // The server refuses a longer passage (`convex/limits.ts`), and a
+            // refused push has no user-visible path: the sync layer only logs
+            // it. Capping the paste here keeps the two in step.
+            maxLength={PASSAGE_TEXT_MAX}
             multiline
             textAlignVertical="top"
             style={[styles.textInput, { color: colors.foreground }]}

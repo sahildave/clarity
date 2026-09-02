@@ -9,14 +9,3 @@ export const fonts = {
   bold: 'SFProRounded-Bold',
   heavy: 'SFProRounded-Heavy',
 } as const;
-
-/** Font map for expo-font's useFonts, keyed by PostScript name so runtime
- * loading (Expo Go) and build-time embedding (dev builds) resolve the same
- * fontFamily strings. */
-export const fontAssets = {
-  [fonts.regular]: require('@/assets/fonts/SF-Pro-Rounded-Regular.otf'),
-  [fonts.medium]: require('@/assets/fonts/SF-Pro-Rounded-Medium.otf'),
-  [fonts.semibold]: require('@/assets/fonts/SF-Pro-Rounded-Semibold.otf'),
-  [fonts.bold]: require('@/assets/fonts/SF-Pro-Rounded-Bold.otf'),
-  [fonts.heavy]: require('@/assets/fonts/SF-Pro-Rounded-Heavy.otf'),
-};

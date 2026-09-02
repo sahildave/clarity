@@ -22,6 +22,7 @@
 import {
   KEY,
   META_KEY,
+  deltaKey,
   makeRecordKey,
   parseExport,
   parseRecord,
@@ -102,6 +103,13 @@ export type RecordSessionInput = {
    * dropped — the record deliberately stays scalar-only. */
   words?: readonly { word: string; status: string }[];
 };
+
+/** One per-word verdict, compacted for storage and upload: `w` word, `s` status. */
+export type WordDelta = { w: string; s: string };
+
+/** Cap on stored verdicts per session. A passage is a few hundred words; this
+ * only guards against a runaway recognizer, well under Convex's document limit. */
+export const MAX_WORD_DELTAS = 2000;
 
 export type WriteResult =
   | { ok: true; record: SessionRecord; durable: boolean }
@@ -529,10 +537,59 @@ export function createHistoryStore(deps: HistoryStoreDeps) {
     if (!writeRecord(record)) return { ok: false, reason: 'persist-failed', record };
 
     appendToSnapshot(record);
-    if (input.words) recordWords(input.words, record.completedAt, record.endedReason);
+    if (input.words) {
+      recordWords(input.words, record.completedAt, record.endedReason);
+      writeDeltas(record.id, input.words);
+    }
     lastError = null;
     notify();
     return { ok: true, record, durable };
+  }
+
+  /**
+   * Keep the verdicts beside the record until they have been uploaded. Best
+   * effort: a failed sidecar write costs another device's word mastery for
+   * this one session, never the session itself.
+   */
+  function writeDeltas(recordId: string, words: readonly { word: string; status: string }[]) {
+    if (words.length === 0) return;
+    const deltas: WordDelta[] = words
+      .slice(0, MAX_WORD_DELTAS)
+      .map(({ word, status }) => ({ w: word, s: status }));
+    try {
+      kv.set(deltaKey(recordId), JSON.stringify(deltas));
+    } catch (error) {
+      warn(`[history] could not keep word verdicts for ${recordId}`, error);
+    }
+  }
+
+  function getWordDeltas(recordId: string): WordDelta[] | null {
+    const raw = kv.getString(deltaKey(recordId));
+    if (raw == null) return null;
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? (parsed as WordDelta[]) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function removeWordDeltas(recordId: string) {
+    kv.remove(deltaKey(recordId));
+  }
+
+  /**
+   * Fold verdicts that arrived from another device into the mastery aggregates.
+   * The same fold `recordSession` runs locally, so both directions agree.
+   */
+  function applyWordVerdicts(
+    words: readonly { word: string; status: string }[],
+    at: number,
+    endedReason: SessionEndedReason,
+  ) {
+    hydrate();
+    recordWords(words, at, endedReason);
+    notify();
   }
 
   /** Used by import and by the dev seeder: an already-formed record. */
@@ -550,6 +607,7 @@ export function createHistoryStore(deps: HistoryStoreDeps) {
     hydrate();
     const removed = kv.remove(id);
     if (removed) {
+      kv.remove(deltaKey(id));
       records = (records ?? []).filter((r) => r.id !== id);
       notify();
     }
@@ -562,6 +620,7 @@ export function createHistoryStore(deps: HistoryStoreDeps) {
         key.startsWith(KEY.record) ||
         key.startsWith(KEY.quarantine) ||
         key.startsWith(KEY.word) ||
+        key.startsWith(KEY.delta) ||
         key === META_KEY.seq ||
         key === META_KEY.inflight ||
         // Cleared too, so the legacy file is re-imported on the next hydrate.
@@ -577,6 +636,35 @@ export function createHistoryStore(deps: HistoryStoreDeps) {
     wordStatsList = null;
     seqCounter = 0;
     legacyCount = 0;
+    recoveredInflight = 0;
+    notify();
+  }
+
+  /**
+   * Sign-out wipe. Removes everything that belongs to the account that was
+   * signed in, and KEEPS the legacy-import guard. `clearAll` drops that guard on
+   * purpose as a recovery path; here it would be a leak, because the next
+   * launch would re-import this device's old `sessions.json` into whichever
+   * account signs in next.
+   */
+  function clearAccountData() {
+    for (const key of kv.getAllKeys()) {
+      if (
+        key.startsWith(KEY.record) ||
+        key.startsWith(KEY.quarantine) ||
+        key.startsWith(KEY.word) ||
+        key.startsWith(KEY.delta) ||
+        key === META_KEY.seq ||
+        key === META_KEY.inflight
+      ) {
+        kv.remove(key);
+      }
+    }
+    kv.trim?.();
+    records = null;
+    wordStats = null;
+    wordStatsList = null;
+    seqCounter = 0;
     recoveredInflight = 0;
     notify();
   }
@@ -817,8 +905,12 @@ export function createHistoryStore(deps: HistoryStoreDeps) {
     beginSession,
     checkpointSession,
     endSession,
+    clearAccountData,
     exportHistory,
     importHistory,
+    getWordDeltas,
+    removeWordDeltas,
+    applyWordVerdicts,
     getQuarantine,
     getStats,
     getLastError: () => lastError,

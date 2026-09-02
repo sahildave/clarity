@@ -42,6 +42,17 @@ export const SKILL_LABELS: Record<SkillKey, string> = {
   intonation: 'Expression',
 };
 
+/** Forward-looking one-liners for choosing a skill to work on (onboarding and
+ * Settings). `REASONS` in `lib/recommendations.ts` is the past-tense sibling
+ * that explains a recommendation already made. */
+export const SKILL_GOALS: Record<SkillKey, string> = {
+  accuracy: 'Say every sound clearly.',
+  fluency: 'Speak smoothly, without stumbles.',
+  pace: 'Hold a steady speed.',
+  fillers: 'Cut the um and the uh.',
+  intonation: 'Add melody and emphasis.',
+};
+
 export const SKILL_ICONS: Record<SkillKey, IconSvgElement> = {
   accuracy: Target01Icon,
   fluency: AudioWave01Icon,

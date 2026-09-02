@@ -1,0 +1,64 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "copyright": "2026 Nathan Schroeder",
+    "categories": [
+      "EDUCATION",
+      "PRODUCTIVITY"
+    ],
+    "advisory": {
+      "alcoholTobaccoOrDrugUseOrReferences": "NONE",
+      "contests": "NONE",
+      "gamblingSimulated": "NONE",
+      "horrorOrFearThemes": "NONE",
+      "matureOrSuggestiveThemes": "NONE",
+      "medicalOrTreatmentInformation": "NONE",
+      "profanityOrCrudeHumor": "NONE",
+      "sexualContentGraphicAndNudity": "NONE",
+      "sexualContentOrNudity": "NONE",
+      "violenceCartoonOrFantasy": "NONE",
+      "violenceRealistic": "NONE",
+      "violenceRealisticProlongedGraphicOrSadistic": "NONE",
+      "gambling": false,
+      "unrestrictedWebAccess": false,
+      "kidsAgeBand": null
+    },
+    "info": {
+      "en-US": {
+        "title": "Clarity: Speech Practice",
+        "subtitle": "Public Speaking & Voice Coach",
+        "keywords": [
+          "filler",
+          "words",
+          "pace",
+          "articulation",
+          "enunciation",
+          "pronunciation",
+          "presentation",
+          "interview",
+          "confidence",
+          "um",
+          "wpm"
+        ],
+        "promoText": "Read a passage, run a one-minute drill, or speak off the cuff. Clarity follows every word and tells you what to work on next.",
+        "description": "Clarity listens while you practice, follows every word, and shows you what to work on next.\n\nPRACTICE YOUR WAY\nRead a passage from the library, paste your own speech, run a one-minute drill, or speak freely on a prompt. Start with the kind of speaking you want to improve.\n\nONE SCORE, FIVE SKILLS\nEvery session gets a speaking score plus Articulation, Flow, Pacing, Fillers, and Expression. See your pace in words per minute and your filler count. Compare each session with your last one.\n\nHEAR EVERY WORD\nTap any word you missed to hear a model pronunciation next to your own recording. Learn which sound to work on.\n\nONE NEXT STEP\nAn AI coach turns each session into one focused note. Use it in your next session while the lesson is still fresh.\n\nTRACK PROGRESS\nCharts, skill trends, day streaks, and records over a week, a month, or all time. A daily goal keeps the habit going.\n\nBUILT FOR REAL PRACTICE\nSix one-minute drills target a single skill each: minimal pairs, tongue twisters, slow and steady, brisk delivery, smooth flow, and expressive reading. Twenty-two freestyle topics help you rehearse for talks, interviews, and meetings.\n\nYOUR VOICE, YOUR ACCENT\nPick the English accent you speak so your own vowels are never counted as mistakes.\n\nCLARITY PRO\nClarity Pro is an optional auto-renewing subscription with weekly, monthly, and annual plans. Payment is charged to your Apple ID account at confirmation of purchase. The subscription renews unless it is cancelled at least 24 hours before the end of the current period. Manage or cancel it in your App Store account settings.\n\nPrivacy Policy: https://clarityspeech.app/privacy\nTerms of Use: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
+        "releaseNotes": "First release of Clarity.",
+        "marketingUrl": "https://clarityspeech.app",
+        "supportUrl": "https://clarityspeech.app/support",
+        "privacyPolicyUrl": "https://clarityspeech.app/privacy"
+      }
+    },
+    "review": {
+      "firstName": "Nathan",
+      "lastName": "Schroeder",
+      "email": "schroedernathan2011@icloud.com",
+      "phone": "+15193003831",
+      "demoRequired": false,
+      "notes": "Clarity is a speech practice app. Sign in with Apple creates the account in one tap, so no separate demo account exists. Any Apple ID works. Sign in with Google is also offered.\n\nTo test: grant microphone and speech recognition when asked. Speech recognition needs a physical device; the simulator has none. On the Home tab, tap Start Practicing, read the passage aloud for about 20 seconds, then finish the session to see the score, the five skills, the word breakdown, and the AI coaching note. The Practice tab has one-minute drills, freestyle topics, and a passage editor. The Analytics tab shows history.\n\nThird-party processing: recorded audio is scored by Microsoft Azure Speech. Session statistics and, for freestyle sessions, a transcript excerpt are sent to our server, which generates the coaching note with Google Gemini through Vercel AI Gateway. Word pronunciation clips come from OpenAI text-to-speech through the same gateway. No audio is stored on our servers.\n\nAccount deletion is in Settings > Account > Delete account. Subscriptions use StoreKit through RevenueCat. Restore purchase is on the paywall.\n\nContact the developer at the email above with any question."
+    },
+    "release": {
+      "automaticRelease": false,
+      "phasedRelease": false
+    }
+  }
+}

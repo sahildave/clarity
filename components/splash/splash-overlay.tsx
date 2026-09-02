@@ -29,14 +29,25 @@ export type SplashOverlayProps = {
   onReveal: () => void;
   /** Fired once the overlay is fully transparent and can be unmounted. */
   onDone: () => void;
+  /**
+   * While true, a finished logo waits on its last frame instead of fading.
+   * The root layout uses it on a fresh install to keep the splash up until it
+   * knows whether this account has already onboarded, so the user is never
+   * shown the wrong first screen for a beat. The caller bounds the wait.
+   */
+  hold?: boolean;
 };
 
 /** Full-screen Lottie splash rendered above the app. Plays once, then fades
  * out into the app background while the content intro staggers in beneath. */
-export function SplashOverlay({ onReveal, onDone }: SplashOverlayProps) {
+export function SplashOverlay({ onReveal, onDone, hold = false }: SplashOverlayProps) {
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
   const viewRef = useRef<LottieView>(null);
   const finishedRef = useRef(false);
+  const holdRef = useRef(hold);
+  holdRef.current = hold;
+  /** The logo finished while held; fade as soon as the hold lifts. */
+  const pendingRef = useRef(false);
   const opacity = useSharedValue(1);
   const onRevealRef = useRef(onReveal);
   const onDoneRef = useRef(onDone);
@@ -49,6 +60,10 @@ export function SplashOverlay({ onReveal, onDone }: SplashOverlayProps) {
 
   const finish = useCallback(() => {
     if (finishedRef.current) return;
+    if (holdRef.current) {
+      pendingRef.current = true;
+      return;
+    }
     finishedRef.current = true;
     onRevealRef.current();
     opacity.value = withTiming(
@@ -70,6 +85,10 @@ export function SplashOverlay({ onReveal, onDone }: SplashOverlayProps) {
       clearTimeout(fallback);
     };
   }, [finish]);
+
+  useEffect(() => {
+    if (!hold && pendingRef.current) finish();
+  }, [hold, finish]);
 
   const fadeStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 

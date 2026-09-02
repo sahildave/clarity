@@ -82,3 +82,12 @@ ls node_modules/@hugeicons-pro/core-stroke-rounded/dist/types | grep -i <keyword
 ```
 
 Example: `ls node_modules/@hugeicons-pro/core-stroke-rounded/dist/types | grep -i micro` → `Microphone01Icon.d.ts`, `Microphone02Icon.d.ts`, etc. Strip the `.d.ts` to get the import name. For visual browsing, search at https://hugeicons.com/icons.
+
+# Convex backend
+
+Backend code lives in `convex/` and runs on Convex, not in the app.
+
+- **Relative imports only inside `convex/`.** The root tsconfig's `@/*` alias typechecks there and then fails at push, because Convex's bundler does not read the app's paths. `bun run typecheck` runs both programs; the `-p convex` pass is what catches it.
+- Functions use the object form with explicit `args` and `returns` validators, `.withIndex(...)` never `.filter(...)`, and read the caller through `requireUserId` in `convex/lib.ts`. No function takes a `userId` argument.
+- Screens never call `useQuery`/`useMutation` for app data (account deletion in `app/settings.tsx` is the one exception), and `useConvexAuth` / `<Authenticated>` appear only in `components/convex-sync.tsx`. The stores in `services/` stay the synchronous source of truth so the first frame renders offline; Convex feeds them from behind.
+- `CLERK_FRONTEND_API_URL` is a Convex deployment env var, set with `bunx convex env set`, and differs between dev and prod. See `.env.example`.
